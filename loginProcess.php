@@ -11,7 +11,7 @@ $password = $_POST['password'];
 
 try {
     // Query full user info
-    $stmt = $conn->prepare("SELECT user_id, username, password, role, first_name, last_name, contact_number,car_id FROM users WHERE username = :username");
+    $stmt = $conn->prepare("SELECT user_id, username, password, role, first_name, last_name, contact_number,car_id,driver_status FROM users WHERE username = :username");
     $stmt->bindParam(':username', $username, PDO::PARAM_STR);
     $stmt->execute();
 
@@ -33,7 +33,17 @@ try {
             if ($user['role'] === 'admin') {
                 echo "<script>window.location.href='dashboard.php';</script>";
             } elseif ($user['role'] === 'driver') {
-                echo "<script>window.location.href='driver.php';</script>";
+                // echo "<script>window.location.href='driver.php';</script>";
+                if (is_null($user['driver_status'])) {  // is_null checks for NULL :contentReference[oaicite:1]{index=1}
+                    echo "<script>
+                    alert('Please wait for your account to be accepted.');
+                    window.location.href = 'login.php';
+                  </script>";
+                    exit;
+                } else {
+                    header('Location: driver.php');
+                    exit;
+                }
             } else {
                 echo "<script>window.location.href='booking.php';</script>";
             }

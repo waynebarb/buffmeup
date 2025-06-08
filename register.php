@@ -36,42 +36,51 @@
                                 <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
                             </div>
                             <form class="user" method="post" action="registerProcess.php">
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user" name="firstName"
-                                            required placeholder="First Name">
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <input type="text" class="form-control form-control-user" name="lastName"
-                                            required placeholder="Last Name">
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-sm-12">
-                                        <input type="text" class="form-control form-control-user" name="cotactNumber"
-                                            required placeholder="Contact Number">
-                                    </div>
-                                </div>
+                                <!-- User Type -->
                                 <div class="form-group">
-                                    <input type="username" class="form-control form-control-user" name="userName"
-                                        required placeholder="Username">
+                                    <select name="userType" class="form-control" required>
+                                        <option value="user">Passenger</option>
+                                        <option value="driver">Driver</option>
+                                    </select>
                                 </div>
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0 position-relative">
+
+                                <!-- Name fields -->
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <input type="text" name="firstName" class="form-control" placeholder="First Name" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <input type="text" name="lastName" class="form-control" placeholder="Last Name" required>
+                                    </div>
+                                </div>
+
+                                <!-- Contact -->
+                                <div class="form-group">
+                                    <input type="text" name="contact_number" class="form-control" placeholder="Contact Number" required>
+                                </div>
+
+                                <!-- Username -->
+                                <div class="form-group">
+                                    <input type="text" name="userName" class="form-control" placeholder="Username" required>
+                                </div>
+
+                                <!-- Password / Repeat -->
+                                <div class="form-row">
+                                    <div class="form-group col-md-6 position-relative">
                                         <div class="input-group">
-                                            <input type="password" required class="form-control form-control-user" name="password" id="exampleInputPassword" placeholder="Password">
+                                            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
                                             <div class="input-group-append">
-                                                <span class="input-group-text bg-white border-left-0" onclick="togglePassword('exampleInputPassword', this)" style="cursor: pointer;">
+                                                <span class="input-group-text bg-white" role="button" onclick="togglePassword('password', this)">
                                                     <i class="fas fa-eye"></i>
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-sm-6 position-relative">
+                                    <div class="form-group col-md-6 position-relative">
                                         <div class="input-group">
-                                            <input type="password" required class="form-control form-control-user" id="exampleRepeatPassword" placeholder="Repeat Password">
+                                            <input type="password" id="repeatPassword" class="form-control" placeholder="Repeat Password" required>
                                             <div class="input-group-append">
-                                                <span class="input-group-text bg-white border-left-0" onclick="togglePassword('exampleRepeatPassword', this)" style="cursor: pointer;">
+                                                <span class="input-group-text bg-white" role="button" onclick="togglePassword('repeatPassword', this)">
                                                     <i class="fas fa-eye"></i>
                                                 </span>
                                             </div>
@@ -79,9 +88,22 @@
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary btn-user btn-block">
-                                    Register Account
-                                </button>
+                                <!-- Driver-specific fields (hidden by default) -->
+                                <div class="form-row driver-fields">
+                                    <div class="form-group col-md-6">
+                                        <input type="text" name="model" id="model" class="form-control" placeholder="Car Model">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <input type="text" name="plate_number" id="plate_number" class="form-control" placeholder="Plate Number">
+                                    </div>
+                                  
+                                </div>
+
+                                <input type="hidden" name="car_id" id="car_id">
+                                <input type="hidden" name="user_id" value="<?php echo $_SESSION['user_id']; ?>">
+
+                                <!-- Submit button -->
+                                <button type="submit" class="btn btn-primary btn-user btn-block">Register Account</button>
                                 <hr>
                                 <div class="text-center">
                                     <a class="small" href="login.php">Already have an account?</a>
@@ -107,6 +129,23 @@
 
 
     <script>
+        $(document).ready(function() {
+            // hide driver fields by default
+            $('.driver-fields').hide();
+
+            $('select[name="userType"]').change(function() {
+                if ($(this).val() === 'driver') {
+                    $('.driver-fields').slideDown(); // show with animation
+                    // add required
+                    $('.driver-fields').find('input').attr('required', true);
+                } else {
+                    $('.driver-fields').slideUp();
+                    // remove required when hidden
+                    $('.driver-fields').find('input').removeAttr('required');
+                }
+            });
+        });
+
         function togglePassword(inputId, el) {
             const input = document.getElementById(inputId);
             const icon = el.querySelector('i');

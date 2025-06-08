@@ -1,25 +1,47 @@
 <?php
-session_start();
-if (!isset($_SESSION['username'])) {
-    header("Location: login.php");
-    exit();
-}
-
+// Include database connection
 include('connection.php');
 
-// Fetch all transaction details along with user and car info
-$query = "
+// Start the session
+session_start();
+
+// Siguroha nga ang user naka-login
+if (!isset($_SESSION['user_id'])) {
+    echo "<script>alert('Kinahanglan ka mag-login una.'); window.location.href='login.php';</script>";
+    exit;
+}
+
+try {
+    // Pag-prepare ug execute sa query aron kuhaon ang tanang users
+    $stmt = $conn->prepare("
     SELECT 
-        t.transaction_id, t.pick_up, t.drop_off, t.status, t.fare, 
-        t.pickup_date, t.pickup_time, t.dropoff_date, t.dropoff_time, 
-        t.distance, u.username AS user_name, c.model AS car_model
-    FROM transactions t
-    LEFT JOIN users u ON t.user_id = u.user_id
-    LEFT JOIN cars c ON t.car_id = c.car_id
-";
-$stmt = $conn->prepare($query);
-$stmt->execute();
-$transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        user_id,
+        first_name,
+        last_name,
+        contact_number,
+        username,
+        password,
+        role,
+        car_id,
+        plain_password,
+        driver_status
+    FROM users
+    WHERE role = :role
+");
+    $stmt->execute([':role' => 'driver']);
+
+    // Pagkuha sa tanang resulta isip associative array
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Sample nga paggamit: Pag-loop sa mga users ug ipakita ang ilang username
+    // foreach ($users as $user) {
+    //     echo "User ID: {$user['user_id']} - Username: {$user['username']} - Role: {$user['role']}<br>";
+    // }
+} catch (PDOException $e) {
+    echo "Error: " . htmlspecialchars($e->getMessage());
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -142,6 +164,7 @@ $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>Drivers</span></a>
             </li>
+
             <li class="nav-item">
                 <a class="nav-link" href="userList.php">
                     <i class="fas fa-fw fa-chart-area"></i>
@@ -192,32 +215,6 @@ $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
 
-                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
-                        <!-- <li class="nav-item dropdown no-arrow d-sm-none">
-                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-search fa-fw"></i>
-                            </a>
-                            
-                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
-                                aria-labelledby="searchDropdown">
-                                <form class="form-inline mr-auto w-100 navbar-search">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control bg-light border-0 small"
-                                            placeholder="Search for..." aria-label="Search"
-                                            aria-describedby="basic-addon2">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary" type="button">
-                                                <i class="fas fa-search fa-sm"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </li> -->
-
-
-
                         <div class="topbar-divider d-none d-sm-block"></div>
 
                         <!-- Nav Item - User Information -->
@@ -247,52 +244,54 @@ $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
-                    <!-- Page Heading -->
-
+                    <!-- Content Row -->
                     <div class="row">
-                        <div class="card">
-                            <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary">Transactions</h6>
-                            </div>
-                            <div class="card-body">
-                                <table class="table table-bordered table-hover table-striped table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Transaction ID</th>
-                                            <th>Pick-Up Location</th>
-                                            <th>Drop-Off Location</th>
-                                            <th>Car Model</th>
-                                            <th>Passenger</th>
-                                            <th>Status</th>
-                                            <th>Fare</th>
-                                            <th>Pickup Date/Time</th>
-                                            <th>Dropoff Date/Time</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($transactions as $transaction): ?>
+
+                        <!-- Content Column -->
+                        <div class="col-lg-12 mb-4">
+                            <!-- Project Card Example -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Accept Driver</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered table-striped table-hover">
+                                        <thead>
                                             <tr>
-                                                <td><?= htmlspecialchars($transaction['transaction_id']) ?></td>
-                                                <td><?= htmlspecialchars($transaction['pick_up']) ?></td>
-                                                <td><?= htmlspecialchars($transaction['drop_off']) ?></td>
-                                                <td><?= htmlspecialchars($transaction['car_model']) ?></td>
-                                                <td><?= htmlspecialchars(ucfirst($transaction['user_name'])) ?></td>
-                                                <td><?= htmlspecialchars($transaction['status']) ?></td>
-                                                <td>₱<?= number_format($transaction['fare'], 2) ?></td>
-                                                <td><?= htmlspecialchars($transaction['pickup_date']) ?> <?= htmlspecialchars($transaction['pickup_time']) ?></td>
-                                                <td><?= htmlspecialchars($transaction['dropoff_date']) ?> <?= htmlspecialchars($transaction['dropoff_time']) ?></td>
-                                                <td>
-                                                    <?php if ($transaction['status'] !== 'Completed'): ?>
-                                                        <a href="driverTransaction.php?transaction_id=<?= $transaction['transaction_id'] ?>" class="btn btn-primary btn-sm">View</a>
-                                                    <?php else: ?>
-                                                        <span class="badge badge-success">Completed</span>
-                                                    <?php endif; ?>
-                                                </td>
+                                                <th>User ID</th>
+                                                <th>First Name</th>
+                                                <th>Last Name</th>
+                                                <th>Contact Number</th>
+                                                <th>Username</th>
+                                                
+                                                <th>Driver Status</th>
                                             </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($users as $user): ?>
+                                                <tr>
+                                                    <td><?= htmlspecialchars($user['user_id']) ?></td>
+                                                    <td><?= htmlspecialchars($user['first_name']) ?></td>
+                                                    <td><?= htmlspecialchars($user['last_name']) ?></td>
+                                                    <td><?= htmlspecialchars($user['contact_number']) ?></td>
+                                                    <td><?= htmlspecialchars($user['username']) ?></td>
+                                               
+                                                    <td> <?php if (is_null($user['driver_status'])): ?>
+                                                            <form method="post" action="accept_driver.php">
+                                                                <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['user_id']) ?>">
+                                                                <button type="submit" name="accept" class="btn btn-success btn-sm">
+                                                                    Accept Driver
+                                                                </button>
+                                                            </form>
+                                                        <?php else: ?>
+                                                            <?= htmlspecialchars($user['driver_status']) ?>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
